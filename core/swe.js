@@ -1,5 +1,5 @@
 // SMMWE SWE container reader/writer.
-// Uses a small pure-JS HMAC-SHA1 implementation for compatibility with Android 5 WebView.
+// Pure-JS HMAC-SHA1 keeps this working in Android 5 WebView.
 const KEY="2559F35097-2021";
 function utf8Binary(text){return unescape(encodeURIComponent(text));}
 function binaryUtf8(binary){return decodeURIComponent(escape(binary));}
@@ -37,13 +37,13 @@ function hmacSha1(text){
   const ih=sha1(inner.concat(msg));
   return sha1(outer.concat(ih.match(/../g).map(x=>parseInt(x,16))));
 }
-function decodeBase64(s){const bin=atob(s);return binaryUtf8(bin);}
+function decodeBase64(s){return binaryUtf8(atob(s));}
 function encodeBase64(s){return btoa(utf8Binary(s));}
 export async function inspectSwe(buffer){
-  const raw=binaryUtf8(Array.from(new Uint8Array(buffer),b=>String.fromCharCode(b)).join("")).trim();
-  const m=raw.match(/^([A-Za-z0-9+/=\\r\\n]+)([0-9a-f]{40})$/i);
+  const raw=Array.from(new Uint8Array(buffer),b=>String.fromCharCode(b)).join("").trim();
+  const m=raw.match(/^([A-Za-z0-9+/=\r\n]+)([0-9a-f]{40})$/i);
   if(!m)throw new Error("无法识别此 .swe 文件的容器格式");
-  const payload=m[1].replace(/\\s/g,""),actual=m[2].toLowerCase(),expected=hmacSha1(payload);
+  const payload=m[1].replace(/\s/g,""),actual=m[2].toLowerCase(),expected=hmacSha1(payload);
   if(actual!==expected)throw new Error("HMAC-SHA1 校验失败，文件未载入");
   let data;
   try{data=JSON.parse(decodeBase64(payload));}catch(e){throw new Error("校验通过，但 JSON 解码失败："+e.message);}
