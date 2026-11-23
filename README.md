@@ -24,7 +24,9 @@ SMMWE level editor with a browser edition and an Android phone/tablet edition (A
 
 ## Run the web edition
 
-Open `web/index.html` in a modern browser, or serve the repository root with a static HTTP server.
+After enabling GitHub Pages and running **Deploy Web Editor**, the editor will be available at `https://jituiLeet.github.io/SMMWE-Level-Editor/web/`.
+
+For local use, open `web/index.html` in a modern browser, or serve the repository root with a static HTTP server.
 
 ## Build Android
 
