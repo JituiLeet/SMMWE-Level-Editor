@@ -26,20 +26,20 @@ function sha1(bytes){
     }
     h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
   }
-  return [h0,h1,h2,h3,h4].map(x=>x.toString(16).padStart(8,"0")).join("");
+  return [h0,h1,h2,h3,h4].map(x=>("00000000"+x.toString(16)).slice(-8)).join("");
 }
 export function hmacSha1(text){
-  let key=Array.from(utf8Binary(KEY),c=>c.charCodeAt(0));
-  if(key.length>64)key=Array.from(sha1(key).match(/../g),x=>parseInt(x,16));
+  let keyText=utf8Binary(KEY),key=[];for(let i=0;i<keyText.length;i++)key.push(keyText.charCodeAt(i));
+  if(key.length>64)key=sha1(key).match(/../g).map(x=>parseInt(x,16));
   while(key.length<64)key.push(0);
   const inner=key.map(x=>x^0x36),outer=key.map(x=>x^0x5c);
-  const msg=Array.from(utf8Binary(text),c=>c.charCodeAt(0));
+  const msgText=utf8Binary(text),msg=[];for(let i=0;i<msgText.length;i++)msg.push(msgText.charCodeAt(i));
   const ih=sha1(inner.concat(msg));
   return sha1(outer.concat(ih.match(/../g).map(x=>parseInt(x,16))));
 }
 function decodeBase64(s){return binaryUtf8(atob(s));}
 function encodeBase64(s){return btoa(utf8Binary(s));}
-export async function inspectSwe(buffer){
+export function inspectSwe(buffer){
   const raw=Array.from(new Uint8Array(buffer),b=>String.fromCharCode(b)).join("").trim();
   const m=raw.match(/^([A-Za-z0-9+/=\r\n]+)([0-9a-f]{40})$/i);
   if(!m)throw new Error("无法识别此 .swe 文件的容器格式");
