@@ -5,8 +5,8 @@ const $=id=>document.getElementById(id),canvas=$("board"),ctx=canvas.getContext(
 let level=newLevel(),tool="paint",selected="ground",zoom=1,offset={x:28,y:24},pointerDown=false,space=false,last="",sweDoc=null,sweTemplates=null,sweLayer="S2",sweId="49";
 const history=new History();
 const clone=v=>JSON.parse(JSON.stringify(v));
-function state(){return {level:clone(level),sweDoc:sweDoc?clone(sweDoc):null,sweLayer,sweId};}
-function restore(v){level=v.level;sweDoc=v.sweDoc;sweLayer=v.sweLayer||"S2";sweId=v.sweId||"49";uiFromLevel();syncSweUI();draw();}
+function state(){return {level:clone(level),sweDoc:sweDoc?clone(sweDoc):null,sweTemplates:sweTemplates?clone(sweTemplates):null,sweLayer,sweId};}
+function restore(v){level=v.level;sweDoc=v.sweDoc;sweTemplates=v.sweTemplates||null;sweLayer=v.sweLayer||"S2";sweId=v.sweId||"49";uiFromLevel();syncSweUI();draw();}
 function checkpoint(){history.checkpoint(state());}
 function metadataFromUI(){
   level.metadata={name:$("name").value,author:$("author").value,description:$("description").value,tags:$("tags").value.split(",").map(x=>x.trim()).filter(Boolean)};
@@ -27,7 +27,7 @@ function syncSweUI(){
   $("sweTools").hidden=!sweDoc;$("palette").hidden=!!sweDoc;
   if(!sweDoc){$("exportSwe").disabled=true;return;}
   $("sweLayer").value=sweLayer;$("sweId").value=sweId;
-  const records=currentArray(),ids=[...new Set(records.map(recordId).filter(Boolean))].sort();
+  const records=(sweTemplates?.[sweLayer]||currentArray()),ids=[...new Set(records.map(recordId).filter(Boolean))].sort();
   $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").append(o);}
   $("exportSwe").disabled=false;
   $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S2Count??sweDoc.S0.S2.length)+" 条；当前层 "+sweLayer+"："+records.length+" 条。未知字段与其他数据组保留。";
@@ -65,7 +65,7 @@ function editSwe(x,y){
   if(!proto){$("sweInfo").textContent="当前数据组没有可复制的样本记录，无法安全新建此类对象。";return;}
   const rec=cloneSweRecord(proto),dx=xx-(Number(proto.xx)||0),dy=yy-(Number(proto.yy)||0);rec.xx=xx;rec.yy=yy;
   if(sweLayer==="S8"){if(Number.isFinite(rec.dr_x))rec.dr_x+=dx;if(Number.isFinite(rec.dr_y))rec.dr_y+=dy;}
-  if(sweLayer!=="S5"&&sweLayer!=="S8"&&rec.ID!==sweId){const exact=sweDoc.S0[sweLayer].find(r=>r.ID===sweId);if(exact){const fresh=cloneSweRecord(exact);fresh.xx=xx;fresh.yy=yy;arr.push(fresh);return;}}
+  if(sweLayer!=="S5"&&sweLayer!=="S8"&&rec.ID!==sweId){const exact=(sweTemplates[sweLayer]||[]).find(r=>r.ID===sweId);if(exact){const fresh=cloneSweRecord(exact);fresh.xx=xx;fresh.yy=yy;arr.push(fresh);return;}}
   arr.push(rec);
 }
 function apply(e){
