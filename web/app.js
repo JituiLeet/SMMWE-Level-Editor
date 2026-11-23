@@ -56,16 +56,21 @@ function coords(e){const r=canvas.getBoundingClientRect(),s=level.grid.tileSize*
 function editSwe(x,y){
   const arr=currentArray(),xx=x*16,yy=y*16;
   const idx=arr.findIndex(r=>Math.round(r.xx/16)===x&&Math.round(r.yy/16)===y);
+  const removed=idx>=0?arr[idx]:null;
   if(idx>=0)arr.splice(idx,1);
   if(tool==="erase")return;
-  if(sweLayer==="S2"){arr.push({xx,yy,i:Number(sweId)});return;}
+  if(sweLayer==="S2"){
+    const id=Number(sweId);if(!Number.isInteger(id)||id<0||id>9999){$("sweInfo").textContent="地形 ID 必须为 0–9999 的整数。";return;}
+    arr.push({xx,yy,i:id});return;
+  }
+  const templates=sweTemplates?.[sweLayer]||[];
   let proto;
-  if(sweLayer==="S5")proto=arr[0]||sweDoc.S0.S5[0];
-  else proto=arr.find(r=>recordId(r)===sweId)||arr[0]||sweDoc.S0[sweLayer][0];
+  if(sweLayer==="S5")proto=removed||arr[0]||templates[0];
+  else proto=templates.find(r=>recordId(r)===sweId)||removed||arr[0]||templates[0];
   if(!proto){$("sweInfo").textContent="当前数据组没有可复制的样本记录，无法安全新建此类对象。";return;}
-  const rec=cloneSweRecord(proto),dx=xx-(Number(proto.xx)||0),dy=yy-(Number(proto.yy)||0);rec.xx=xx;rec.yy=yy;
+  const rec=cloneSweRecord(proto),dx=xx-(Number(proto.xx)||0),dy=yy-(Number(proto.yy)||0);
+  rec.xx=xx;rec.yy=yy;
   if(sweLayer==="S8"){if(Number.isFinite(rec.dr_x))rec.dr_x+=dx;if(Number.isFinite(rec.dr_y))rec.dr_y+=dy;}
-  if(sweLayer!=="S5"&&sweLayer!=="S8"&&rec.ID!==sweId){const exact=(sweTemplates[sweLayer]||[]).find(r=>r.ID===sweId);if(exact){const fresh=cloneSweRecord(exact);fresh.xx=xx;fresh.yy=yy;arr.push(fresh);return;}}
   arr.push(rec);
 }
 function apply(e){
