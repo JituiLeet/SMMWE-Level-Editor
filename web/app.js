@@ -34,7 +34,7 @@ function syncSweUI(){
   const records=(sweTemplates&&sweTemplates[sweLayer])||currentArray(),ids=[];records.forEach(function(r){var id=recordId(r);if(id&&ids.indexOf(id)<0)ids.push(id);});ids.sort();
   $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").appendChild(o);}
   $("exportSwe").disabled=false;
-  $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S2Count??sweDoc.S0.S2.length)+" 条；当前层 "+sweLayer+"："+currentArray().length+" 条。未知字段与其他数据组保留。";
+  $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S0.S2?sweDoc.S0.S2.length:0)+" 条；当前层 "+sweLayer+"："+currentArray().length+" 条。未知字段与其他数据组保留。";
 }
 function resizeCanvas(){const d=window.devicePixelRatio||1,w=view.clientWidth,h=view.clientHeight;canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);canvas.style.width=w+"px";canvas.style.height=h+"px";ctx.setTransform(d,0,0,d,0,0);draw();}
 function draw(){
@@ -98,17 +98,30 @@ $("save").onclick=()=>{metadataFromUI();if(sweDoc)level.swe={imported:true,sourc
 $("exportSwe").onclick=()=>{if(!sweDoc)return;metadataFromUI();const blob=encodeSwe(sweDoc);download(blob,(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".swe","application/octet-stream");$("status").textContent="SWE 文件已导出";};
 $("new").onclick=()=>{if(!confirm("新建工程？未保存的修改将丢失。"))return;level=newLevel();sweDoc=null;sweTemplates=null;history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="新建工程";};
 $("open").onclick=()=>$("file").click();
-$("file").onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{
-    if(f.name.toLowerCase().endsWith(".swe")){
-      const parsed=await inspectSwe(await f.arrayBuffer());sweDoc=parsed.data;sweTemplates=clone(sweDoc.S0);level=newLevel();level.metadata.name=f.name.replace(/\\.swe$/i,"");const meta=sweDoc.S0.S1?.[0]||{};level.metadata.author=meta.user||"";level.metadata.description=meta.desc||"";level.grid.tileSize=16;
-      const groups=["S2","S3","S4","S5","S8"],records=[];groups.forEach(function(k){(sweDoc.S0[k]||[]).forEach(function(r){if(Number.isFinite(r.xx)&&Number.isFinite(r.yy))records.push(r);});});
-      level.grid.width=Math.max(80,Math.min(500,Math.ceil(Math.max(0,...records.map(r=>r.xx))/16)+4));level.grid.height=Math.max(15,Math.min(100,Math.ceil(Math.max(0,...records.map(r=>r.yy))/16)+4));
-      level.swe={imported:true,sourceName:f.name,document:sweDoc};sweLayer="S2";sweId="49";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="SWE 已载入，可编辑";return;
+$("file").onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var isSwe=/\.swe$/i.test(f.name);
+  readFile(f,isSwe).then(function(result){
+    if(isSwe){
+      var parsed=inspectSwe(result);sweDoc=parsed.data;sweTemplates=clone(sweDoc.S0);level=newLevel();
+      level.metadata.name=f.name.replace(/\.swe$/i,"");
+      var meta=(sweDoc.S0.S1&&sweDoc.S0.S1[0])||{};
+      level.metadata.author=meta.user||"";level.metadata.description=meta.desc||"";level.grid.tileSize=16;
+      var groups=["S2","S3","S4","S5","S8"],records=[];
+      groups.forEach(function(k){(sweDoc.S0[k]||[]).forEach(function(r){if(Number.isFinite(r.xx)&&Number.isFinite(r.yy))records.push(r);});});
+      var maxX=0,maxY=0;records.forEach(function(r){maxX=Math.max(maxX,r.xx);maxY=Math.max(maxY,r.yy);});
+      level.grid.width=Math.max(80,Math.min(500,Math.ceil(maxX/16)+4));
+      level.grid.height=Math.max(15,Math.min(100,Math.ceil(maxY/16)+4));
+      level.swe={imported:true,sourceName:f.name,document:sweDoc,templates:sweTemplates};
+      sweLayer="S2";sweId="49";history.checkpoint(state());uiFromLevel();syncSweUI();draw();
+      $("status").textContent="SWE 已载入，可编辑";return;
     }
-    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe&&v.swe.imported?v.swe.document:null;sweTemplates=sweDoc?(v.swe.templates||clone(sweDoc.S0)):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
-  }catch(err){alert("打开失败："+err.message);}e.target.value="";
+    var v=validateLevel(JSON.parse(result));level=v;
+    sweDoc=v.swe&&v.swe.imported?v.swe.document:null;
+    sweTemplates=sweDoc?(v.swe.templates||clone(sweDoc.S0)):null;
+    sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();
+    $("status").textContent="工程已打开";
+  }).catch(function(err){alert("打开失败："+err.message);}).then(function(){e.target.value="";});
 };
 $("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize:sweDoc?16:tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
 $("sweLayer").onchange=()=>{sweLayer=$("sweLayer").value;syncSweUI();draw();};
