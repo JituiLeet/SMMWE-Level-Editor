@@ -13,7 +13,7 @@ function state(){return {level:clone(level),sweDoc:sweDoc?clone(sweDoc):null,swe
 function restore(v){level=v.level;sweDoc=v.sweDoc;sweTemplates=v.sweTemplates||null;sweLayer=v.sweLayer||"S2";sweId=v.sweId||"49";uiFromLevel();syncSweUI();draw();}
 function checkpoint(){history.checkpoint(state());}
 function metadataFromUI(){
-  level.metadata={...level.metadata,name:$("name").value,author:$("author").value,description:$("description").value,tags:$("tags").value.split(",").map(x=>x.trim()).filter(Boolean),gamestyle:$("gamestyle").value,gametheme:$("gametheme").value,timer:Number($("timer").value)||0,startY:Number($("startY").value)||0,goalX:Number($("goalX").value)||0,goalY:Number($("goalY").value)||0};
+  level.metadata={...level.metadata,name:$("name").value,author:$("author").value,description:$("description").value,tags:$("tags").value.split(",").map(x=>x.trim()).filter(Boolean),gamestyle:$("gamestyle").value===""?"":Number($("gamestyle").value),gametheme:$("gametheme").value===""?"":Number($("gametheme").value),timer:Number($("timer").value)||0,startY:Number($("startY").value)||0,goalX:Number($("goalX").value)||0,goalY:Number($("goalY").value)||0};
   if(sweDoc){const meta=sweDoc.S0.S1&&sweDoc.S0.S1[0];if(meta){meta.user=level.metadata.author;meta.desc=level.metadata.description;for(const k of ["gamestyle","gametheme","timer","start_y","goal_x","goal_y"]){const v=({gamestyle:level.metadata.gamestyle,gametheme:level.metadata.gametheme,timer:level.metadata.timer,start_y:level.metadata.startY,goal_x:level.metadata.goalX,goal_y:level.metadata.goalY})[k];if(v!==""&&v!==undefined)meta[k]=v;}}}
 }
 function uiFromLevel(){
