@@ -10,10 +10,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
+import androidx.webkit.WebViewAssetLoader;
 import java.io.OutputStream;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int REQUEST_SAVE = 4101;
@@ -38,16 +36,24 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         web = new WebView(this);
-        WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-        s.setAllowFileAccess(true);
+        WebSettings settings = web.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
-        web.setWebViewClient(new WebViewClient());
+
+        WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
+        web.setWebViewClient(new WebViewClient() {
+            @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, android.webkit.WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+        });
         web.setWebChromeClient(new WebChromeClient() {
-            @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params) {
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
-                fileCallback = cb;
+                fileCallback = callback;
                 Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*");
@@ -56,7 +62,7 @@ public class MainActivity extends Activity {
             }
         });
         setContentView(web);
-        web.loadUrl("file:///android_asset/editor/web/index.html");
+        web.loadUrl("https://appassets.androidplatform.net/assets/editor/web/index.html");
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -66,6 +72,7 @@ public class MainActivity extends Activity {
                 try {
                     byte[] bytes = android.util.Base64.decode(pendingBase64, android.util.Base64.DEFAULT);
                     OutputStream out = getContentResolver().openOutputStream(data.getData());
+                    if (out == null) throw new IllegalStateException("无法打开目标文件");
                     out.write(bytes); out.close();
                     web.evaluateJavascript("document.getElementById('status').textContent='文件已保存'", null);
                 } catch (Exception ex) {
