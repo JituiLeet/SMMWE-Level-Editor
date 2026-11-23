@@ -6,6 +6,7 @@ on:
       - 'android/**'
       - 'web/**'
       - 'core/**'
+      - 'tests/**'
       - '.github/workflows/android.yml'
 jobs:
   build:
