@@ -24,13 +24,13 @@ function syncTools(){document.querySelectorAll(".tool").forEach(b=>b.classList.t
 function currentArray(){return sweDoc?.S0?.[sweLayer]||[];}
 function recordId(r){return r.ID||((sweLayer==="S2")?String(r.i):"platform");}
 function syncSweUI(){
-  $("sweTools").hidden=!sweDoc;$("palette").hidden=!!sweDoc;
+  $("sweTools").hidden=!sweDoc;$("palette").hidden=!!sweDoc;$("tileSize").disabled=!!sweDoc;
   if(!sweDoc){$("exportSwe").disabled=true;return;}
   $("sweLayer").value=sweLayer;$("sweId").value=sweId;
   const records=(sweTemplates?.[sweLayer]||currentArray()),ids=[...new Set(records.map(recordId).filter(Boolean))].sort();
   $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").append(o);}
   $("exportSwe").disabled=false;
-  $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S2Count??sweDoc.S0.S2.length)+" 条；当前层 "+sweLayer+"："+records.length+" 条。未知字段与其他数据组保留。";
+  $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S2Count??sweDoc.S0.S2.length)+" 条；当前层 "+sweLayer+"："+currentArray().length+" 条。未知字段与其他数据组保留。";
 }
 function resizeCanvas(){const d=window.devicePixelRatio||1,w=view.clientWidth,h=view.clientHeight;canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);canvas.style.width=w+"px";canvas.style.height=h+"px";ctx.setTransform(d,0,0,d,0,0);draw();}
 function draw(){
