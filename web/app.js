@@ -1,6 +1,10 @@
 import {newLevel,validateLevel,TILE_TYPES} from "../core/model.js";
 import {History} from "../core/history.js";
 import {inspectSwe,encodeSwe,cloneSweRecord} from "../core/swe.js";
+if(!Array.prototype.find)Array.prototype.find=function(fn,ctx){for(var i=0;i<this.length;i++)if(fn.call(ctx,this[i],i,this))return this[i];};
+if(!NodeList.prototype.forEach)NodeList.prototype.forEach=Array.prototype.forEach;
+if(!Element.prototype.replaceChildren)Element.prototype.replaceChildren=function(){while(this.firstChild)this.removeChild(this.firstChild);for(var i=0;i<arguments.length;i++)this.appendChild(arguments[i]);};
+function readFile(file,asBuffer){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result);};r.onerror=function(){reject(r.error||new Error("文件读取失败"));};if(asBuffer)r.readAsArrayBuffer(file);else r.readAsText(file);});}
 const $=id=>document.getElementById(id),canvas=$("board"),ctx=canvas.getContext("2d"),view=$("viewport");
 let level=newLevel(),tool="paint",selected="ground",zoom=1,offset={x:28,y:24},pointerDown=false,space=false,last="",sweDoc=null,sweTemplates=null,sweLayer="S2",sweId="49";
 const history=new History();
@@ -10,7 +14,7 @@ function restore(v){level=v.level;sweDoc=v.sweDoc;sweTemplates=v.sweTemplates||n
 function checkpoint(){history.checkpoint(state());}
 function metadataFromUI(){
   level.metadata={name:$("name").value,author:$("author").value,description:$("description").value,tags:$("tags").value.split(",").map(x=>x.trim()).filter(Boolean)};
-  if(sweDoc){const meta=sweDoc.S0.S1?.[0];if(meta){meta.user=level.metadata.author;meta.desc=level.metadata.description;}}
+  if(sweDoc){const meta=sweDoc.S0.S1&&sweDoc.S0.S1[0];if(meta){meta.user=level.metadata.author;meta.desc=level.metadata.description;}}
 }
 function uiFromLevel(){
   $("name").value=level.metadata.name||"";$("author").value=level.metadata.author||"";$("description").value=level.metadata.description||"";$("tags").value=(level.metadata.tags||[]).join(",");
@@ -18,17 +22,17 @@ function uiFromLevel(){
 }
 function palette(){
   $("palette").replaceChildren();
-  for(const t of TILE_TYPES){const b=document.createElement("button");b.className="tile"+(selected===t.id?" selected":"");const sw=document.createElement("span");sw.className="swatch";sw.style.background=t.color;sw.textContent=t.glyph;b.append(sw,document.createTextNode(t.name));b.onclick=()=>{selected=t.id;tool="paint";syncTools();palette()};$("palette").append(b);}
+  for(const t of TILE_TYPES){const b=document.createElement("button");b.className="tile"+(selected===t.id?" selected":"");const sw=document.createElement("span");sw.className="swatch";sw.style.background=t.color;sw.textContent=t.glyph;b.appendChild(sw);b.appendChild(document.createTextNode(t.name));b.onclick=()=>{selected=t.id;tool="paint";syncTools();palette()};$("palette").append(b);}
 }
 function syncTools(){document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("selected",b.dataset.tool===tool));}
-function currentArray(){return sweDoc?.S0?.[sweLayer]||[];}
+function currentArray(){return sweDoc&&sweDoc.S0&&sweDoc.S0[sweLayer]||[];}
 function recordId(r){return r.ID||((sweLayer==="S2")?String(r.i):"platform");}
 function syncSweUI(){
   $("sweTools").hidden=!sweDoc;$("palette").hidden=!!sweDoc;$("tileSize").disabled=!!sweDoc;
   if(!sweDoc){$("exportSwe").disabled=true;return;}
   $("sweLayer").value=sweLayer;$("sweId").value=sweId;
-  const records=(sweTemplates?.[sweLayer]||currentArray()),ids=[...new Set(records.map(recordId).filter(Boolean))].sort();
-  $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").append(o);}
+  const records=(sweTemplates&&sweTemplates[sweLayer])||currentArray(),ids=[];records.forEach(function(r){var id=recordId(r);if(id&&ids.indexOf(id)<0)ids.push(id);});ids.sort();
+  $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").appendChild(o);}
   $("exportSwe").disabled=false;
   $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S2Count??sweDoc.S0.S2.length)+" 条；当前层 "+sweLayer+"："+currentArray().length+" 条。未知字段与其他数据组保留。";
 }
@@ -60,10 +64,10 @@ function editSwe(x,y){
   if(idx>=0)arr.splice(idx,1);
   if(tool==="erase")return;
   if(sweLayer==="S2"){
-    const id=Number(sweId);if(!Number.isInteger(id)||!((sweTemplates?.S2||[]).some(r=>r.i===id))){$("sweInfo").textContent="此样本中没有该地形 ID。请从 ID 列表选择已观察到的编号。";return;}
+    const id=Number(sweId);if(!Number.isInteger(id)||!((sweTemplates&&sweTemplates.S2||[]).some(r=>r.i===id))){$("sweInfo").textContent="此样本中没有该地形 ID。请从 ID 列表选择已观察到的编号。";return;}
     arr.push({xx,yy,i:id});return;
   }
-  const templates=sweTemplates?.[sweLayer]||[];
+  const templates=sweTemplates&&sweTemplates[sweLayer]||[];
   let proto;
   if(sweLayer==="S5")proto=removed||arr[0]||templates[0];
   else proto=templates.find(r=>recordId(r)===sweId)||removed||arr[0]||templates[0];
@@ -99,11 +103,11 @@ $("file").onchange=async e=>{
   try{
     if(f.name.toLowerCase().endsWith(".swe")){
       const parsed=await inspectSwe(await f.arrayBuffer());sweDoc=parsed.data;sweTemplates=clone(sweDoc.S0);level=newLevel();level.metadata.name=f.name.replace(/\\.swe$/i,"");const meta=sweDoc.S0.S1?.[0]||{};level.metadata.author=meta.user||"";level.metadata.description=meta.desc||"";level.grid.tileSize=16;
-      const groups=["S2","S3","S4","S5","S8"],records=groups.flatMap(k=>(sweDoc.S0[k]||[]).filter(r=>Number.isFinite(r.xx)&&Number.isFinite(r.yy)));
+      const groups=["S2","S3","S4","S5","S8"],records=[];groups.forEach(function(k){(sweDoc.S0[k]||[]).forEach(function(r){if(Number.isFinite(r.xx)&&Number.isFinite(r.yy))records.push(r);});});
       level.grid.width=Math.max(80,Math.min(500,Math.ceil(Math.max(0,...records.map(r=>r.xx))/16)+4));level.grid.height=Math.max(15,Math.min(100,Math.ceil(Math.max(0,...records.map(r=>r.yy))/16)+4));
       level.swe={imported:true,sourceName:f.name,document:sweDoc};sweLayer="S2";sweId="49";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="SWE 已载入，可编辑";return;
     }
-    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe?.imported?v.swe.document:null;sweTemplates=sweDoc?(v.swe.templates||clone(sweDoc.S0)):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
+    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe&&v.swe.imported?v.swe.document:null;sweTemplates=sweDoc?(v.swe.templates||clone(sweDoc.S0)):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
   }catch(err){alert("打开失败："+err.message);}e.target.value="";
 };
 $("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize:sweDoc?16:tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
