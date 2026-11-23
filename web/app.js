@@ -151,7 +151,8 @@ $("file").onchange=function(e){
   }).catch(function(err){alert("打开失败："+err.message);}).then(function(){e.target.value="";});
 };
 $("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize:sweDoc?16:tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
-$("sweLayer").onchange=()=>{sweLayer=$("sweLayer").value;syncSweUI();draw();};\n$("propsToggle").onclick=()=>{document.querySelector(".properties").classList.toggle("open");};
+$("sweLayer").onchange=()=>{sweLayer=$("sweLayer").value;syncSweUI();draw();};
+$("propsToggle").onclick=()=>{document.querySelector(".properties").classList.toggle("open");};
 $("sweId").onchange=()=>{sweId=$("sweId").value;};
 ["name","author","description","tags"].forEach(id=>$(id).addEventListener("change",metadataFromUI));
 palette();uiFromLevel();syncSweUI();history.checkpoint(state());resizeCanvas();window.addEventListener("resize",resizeCanvas);
