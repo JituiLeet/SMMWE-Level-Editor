@@ -60,7 +60,7 @@ function editSwe(x,y){
   if(idx>=0)arr.splice(idx,1);
   if(tool==="erase")return;
   if(sweLayer==="S2"){
-    const id=Number(sweId);if(!Number.isInteger(id)||id<0||id>9999){$("sweInfo").textContent="地形 ID 必须为 0–9999 的整数。";return;}
+    const id=Number(sweId);if(!Number.isInteger(id)||!((sweTemplates?.S2||[]).some(r=>r.i===id))){$("sweInfo").textContent="此样本中没有该地形 ID。请从 ID 列表选择已观察到的编号。";return;}
     arr.push({xx,yy,i:id});return;
   }
   const templates=sweTemplates?.[sweLayer]||[];
