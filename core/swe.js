@@ -28,7 +28,7 @@ function sha1(bytes){
   }
   return [h0,h1,h2,h3,h4].map(x=>x.toString(16).padStart(8,"0")).join("");
 }
-function hmacSha1(text){
+export function hmacSha1(text){
   let key=Array.from(utf8Binary(KEY),c=>c.charCodeAt(0));
   if(key.length>64)key=Array.from(sha1(key).match(/../g),x=>parseInt(x,16));
   while(key.length<64)key.push(0);
