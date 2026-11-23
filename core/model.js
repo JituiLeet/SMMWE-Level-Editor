@@ -9,7 +9,7 @@ export const TILE_TYPES = [
   {id:"enemy",name:"敌人（占位）",color:"#cf5e68",glyph:"E"}
 ];
 export function newLevel(){
-  return {format:PROJECT_FORMAT,version:PROJECT_VERSION,metadata:{name:"Untitled Level",author:"",description:"",tags:[]},grid:{width:80,height:15,tileSize:32},tiles:[],swe:{imported:false,sourceName:null}};
+  return {format:PROJECT_FORMAT,version:PROJECT_VERSION,metadata:{name:"Untitled Level",author:"",description:"",tags:[]},grid:{width:80,height:15,tileSize:32},tiles:[],swe:{imported:false,sourceName:null,document:null}};
 }
 export function validateLevel(v){
   if(!v||v.format!==PROJECT_FORMAT||v.version!==PROJECT_VERSION) throw new Error("不支持的工程文件版本");
