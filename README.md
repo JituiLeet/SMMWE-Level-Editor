@@ -1,43 +1,28 @@
 # SMMWE Level Editor
 
-SMMWE level editor with a browser edition and an Android phone/tablet edition (Android 5.0 / API 21+).
+SMMWE 关卡编辑器，提供独立的浏览器版与原生 Android 手机/平板版（最低 Android 5.0 / API 21）。
 
-## Features
+## Android 版
 
-- Grid-based canvas with paint, erase, select/pan, zoom, and touch pointer support.
-- Level metadata: name, author, description, tags.
-- Configurable map dimensions.
-- Undo and redo.
-- Portable `.smmweproj` project save/open.
-- Import real `.swe` files, verify the sample-tested HMAC-SHA1 container, edit supported data layers, and export a newly checksummed `.swe`.
-- SWE editor layers: terrain (`S0.S2`), objects (`S0.S4`), decorations (`S0.S3`), platforms (`S0.S5`), and doors (`S0.S8`).
-- Untouched groups and extra per-object properties are retained. New object records are cloned from source-sample prototypes rather than invented from empty objects.
+Android 版使用 Java 原生界面、原生 Canvas 绘制关卡网格，并通过 Android Storage Access Framework 打开和保存文件；不使用 WebView，也不加载网页资源。SWE 容器的 Base64 与 HMAC-SHA1 校验/写入在 Android 原生代码中完成。
 
-## Project layout
+- 原生触摸画布与网格绘制
+- 新建关卡、图块绘制与擦除
+- 导入 SWE 并校验文件完整性
+- SWE 数据层浏览与记录编辑（S2/S3/S4/S5/S8）
+- 导出带重新计算校验值的 SWE 文件
+- 保存原生工程文件（.smmweproj）
 
-- `web/`: browser editor.
-- `android/`: Android Studio app using the same editor code through WebViewAssetLoader.
-- `core/`: shared project model, undo/redo, SWE parser/writer.
-- `tests/`: SWE checksum and round-trip regression tests.
-- `.github/workflows/android.yml`: manual/push Android debug APK build.
-- `.github/workflows/pages.yml`: GitHub Pages deployment.
+## 浏览器版
 
-## Run the web edition
+- `web/`：独立浏览器编辑器。
+- `core/`：浏览器版项目模型、历史记录、SWE 解析与写入。
+- `tests/`：SWE 校验和往返测试。
 
-After enabling GitHub Pages and running **Deploy Web Editor**, the editor will be available at `https://jituiLeet.github.io/SMMWE-Level-Editor/web/`.
+## 构建 Android
 
-For local use, open `web/index.html` in a modern browser, or serve the repository root with a static HTTP server.
+使用 Android Studio 打开 `android/`，最低 SDK 为 21。GitHub Actions 手动运行 **Android APK**，构建原生 Debug APK 并上传 artifact。
 
-## Build Android
+## SWE 兼容性
 
-Open `android/` in Android Studio. Minimum SDK is 21 (Android 5.0). The GitHub Actions workflow builds a debug APK and uploads it as the `SMMWE-Level-Editor-debug` artifact.
-
-## Deploy the web edition
-
-In repository Settings → Pages, choose GitHub Actions as the source, then run **Deploy Web Editor** from the Actions tab.
-
-## SWE compatibility and testing
-
-The format adapter was built against the known-good `JituiLeet/Test/YINBI.swe` sample. The sample's HMAC-SHA1 digest was independently recomputed and matched. See [SWE compatibility notes](docs/SWE-COMPATIBILITY.md).
-
-The app preserves unknown JSON groups and record properties. It exposes numeric terrain IDs and sample-derived object IDs without pretending that every ID's in-game meaning has been identified. Every exported file should still be imported into the target SMMWE game version before being treated as verified for release.
+格式适配依据已知样本 `JituiLeet/Test/YINBI.swe`。导出文件仍建议在目标 SMMWE 游戏版本中实际导入验证。详见 [SWE compatibility notes](docs/SWE-COMPATIBILITY.md)。
