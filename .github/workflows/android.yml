@@ -24,6 +24,7 @@ jobs:
         run: |
           node --input-type=module --check < web/app.js
           node --input-type=module --check < core/swe.js
+          node tests/swe-roundtrip.mjs
       - name: Install Android SDK packages
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - name: Package shared editor assets
