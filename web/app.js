@@ -2,7 +2,7 @@ import {newLevel,validateLevel,TILE_TYPES} from "../core/model.js";
 import {History} from "../core/history.js";
 import {inspectSwe,encodeSwe,cloneSweRecord} from "../core/swe.js";
 const $=id=>document.getElementById(id),canvas=$("board"),ctx=canvas.getContext("2d"),view=$("viewport");
-let level=newLevel(),tool="paint",selected="ground",zoom=1,offset={x:28,y:24},pointerDown=false,space=false,last="",sweDoc=null,sweLayer="S2",sweId="49";
+let level=newLevel(),tool="paint",selected="ground",zoom=1,offset={x:28,y:24},pointerDown=false,space=false,last="",sweDoc=null,sweTemplates=null,sweLayer="S2",sweId="49";
 const history=new History();
 const clone=v=>JSON.parse(JSON.stringify(v));
 function state(){return {level:clone(level),sweDoc:sweDoc?clone(sweDoc):null,sweLayer,sweId};}
@@ -87,18 +87,18 @@ $("undo").onclick=()=>{const p=history.undo(state());if(p)restore(p);};$("redo")
 function download(blob,name,mime){if(window.AndroidBridge){const reader=new FileReader();reader.onload=()=>AndroidBridge.saveFile(name,reader.result.split(",")[1],mime||"application/octet-stream");reader.readAsDataURL(blob);return;}const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);}
 $("save").onclick=()=>{metadataFromUI();if(sweDoc)level.swe={imported:true,sourceName:level.swe.sourceName,document:sweDoc};validateLevel(level);download(new Blob([JSON.stringify(level,null,2)],{type:"application/json"}),(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".smmweproj","application/json");$("status").textContent="工程已保存";};
 $("exportSwe").onclick=()=>{if(!sweDoc)return;metadataFromUI();const blob=encodeSwe(sweDoc);download(blob,(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".swe","application/octet-stream");$("status").textContent="SWE 文件已导出";};
-$("new").onclick=()=>{if(!confirm("新建工程？未保存的修改将丢失。"))return;level=newLevel();sweDoc=null;history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="新建工程";};
+$("new").onclick=()=>{if(!confirm("新建工程？未保存的修改将丢失。"))return;level=newLevel();sweDoc=null;sweTemplates=null;history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="新建工程";};
 $("open").onclick=()=>$("file").click();
 $("file").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     if(f.name.toLowerCase().endsWith(".swe")){
-      const parsed=await inspectSwe(await f.arrayBuffer());sweDoc=parsed.data;level=newLevel();level.metadata.name=f.name.replace(/\\.swe$/i,"");const meta=sweDoc.S0.S1?.[0]||{};level.metadata.author=meta.user||"";level.metadata.description=meta.desc||"";level.grid.tileSize=16;
+      const parsed=await inspectSwe(await f.arrayBuffer());sweDoc=parsed.data;sweTemplates=clone(sweDoc.S0);level=newLevel();level.metadata.name=f.name.replace(/\\.swe$/i,"");const meta=sweDoc.S0.S1?.[0]||{};level.metadata.author=meta.user||"";level.metadata.description=meta.desc||"";level.grid.tileSize=16;
       const groups=["S2","S3","S4","S5","S8"],records=groups.flatMap(k=>(sweDoc.S0[k]||[]).filter(r=>Number.isFinite(r.xx)&&Number.isFinite(r.yy)));
       level.grid.width=Math.max(80,Math.min(500,Math.ceil(Math.max(0,...records.map(r=>r.xx))/16)+4));level.grid.height=Math.max(15,Math.min(100,Math.ceil(Math.max(0,...records.map(r=>r.yy))/16)+4));
       level.swe={imported:true,sourceName:f.name,document:sweDoc};sweLayer="S2";sweId="49";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="SWE 已载入，可编辑";return;
     }
-    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe?.imported?v.swe.document:null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
+    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe?.imported?v.swe.document:null;sweTemplates=sweDoc?clone(sweDoc.S0):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
   }catch(err){alert("打开失败："+err.message);}e.target.value="";
 };
 $("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
