@@ -65,7 +65,9 @@ function editSwe(x,y){
   if(tool==="erase")return;
   if(sweLayer==="S2"){
     const id=Number(sweId);if(!Number.isInteger(id)||!((sweTemplates&&sweTemplates.S2||[]).some(r=>r.i===id))){$("sweInfo").textContent="此样本中没有该地形 ID。请从 ID 列表选择已观察到的编号。";return;}
-    arr.push({xx,yy,i:id});return;
+    var tileTemplate=removed||((sweTemplates&&sweTemplates.S2||[]).find(function(r){return r.i===id;}))||((sweTemplates&&sweTemplates.S2||[])[0]);
+    var tileRecord=tileTemplate?cloneSweRecord(tileTemplate):{xx:xx,yy:yy,i:id};
+    tileRecord.xx=xx;tileRecord.yy=yy;tileRecord.i=id;arr.push(tileRecord);return;
   }
   const templates=sweTemplates&&sweTemplates[sweLayer]||[];
   let proto;
