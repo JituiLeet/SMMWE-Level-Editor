@@ -70,6 +70,9 @@ function editSwe(x,y){
     tileRecord.xx=xx;tileRecord.yy=yy;tileRecord.i=id;arr.push(tileRecord);return;
   }
   const templates=sweTemplates&&sweTemplates[sweLayer]||[];
+  if(sweLayer!=="S5"&&!templates.some(function(r){return recordId(r)===sweId;})){
+    $("sweInfo").textContent="该对象 ID 不在已验证样本中，已阻止写入未知对象。";return;
+  }
   let proto;
   if(sweLayer==="S5")proto=removed||arr[0]||templates[0];
   else proto=templates.find(r=>recordId(r)===sweId)||removed||arr[0]||templates[0];
