@@ -39,6 +39,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.2.1'
+      - name: Download CC0 pixel-art assets
+        run: |
+          mkdir -p android/app/src/main/assets/art
+          curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/Tilemap/tilemap.png -o android/app/src/main/assets/art/tilemap.png
+          curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/Tilemap/tilemap-characters.png -o android/app/src/main/assets/art/tilemap-characters.png
+          curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/Tilemap/tilemap-backgrounds.png -o android/app/src/main/assets/art/tilemap-backgrounds.png
+          curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/License.txt -o android/app/src/main/assets/art/LICENSE-KENNEY.txt
+          file android/app/src/main/assets/art/*.png
       - name: Run SWE codec regression tests
         run: |
           node --input-type=module --check < core/swe.js
