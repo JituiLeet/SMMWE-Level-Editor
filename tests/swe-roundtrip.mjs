@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { encodeSwe, inspectSwe } from "../core/swe.js";
+import { encodeSwe, inspectSwe, hmacSha1 } from "../core/swe.js";
 
-const fixture = {
+assert.equal(hmacSha1("test"), "5f82b126ea273a1b9e15f762d7bfc9191441c13c");\n\nconst fixture = {
   S0: {
     S1: [{ user: "test-author", desc: "round trip", timer: 300 }],
     S2: [{ xx: 0, yy: 16, i: 49 }, { xx: 16, yy: 16, i: 56 }],
