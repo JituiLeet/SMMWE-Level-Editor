@@ -9,7 +9,8 @@ public class EditorView extends View {
     private final Paint p=new Paint(3); private JSONArray tiles=new JSONArray(); private JSONObject swe; private String layer="S2",id="49"; private boolean erase=false,drag=false; private int selectedType=0; private float scale=1,ox=20,oy=20,lx,ly; private final float cell=32;
     private final int[] colors={0xff8b6547,0xffbd7546,0xffe8b83e,0xff778294,0xff45a879,0xffcf5e68};
     public EditorView(Context c){super(c);setBackgroundColor(0xfffafbfd);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
-    public void setErase(boolean v){erase=v;invalidate();}\n    public void setTileType(int type){selectedType=Math.max(0,Math.min(5,type));erase=false;invalidate();}
+    public void setErase(boolean v){erase=v;invalidate();}
+    public void setTileType(int type){selectedType=Math.max(0,Math.min(5,type));erase=false;invalidate();}
     public void setLayer(String l,String i){layer=l;id=i;invalidate();}
     public void setModel(JSONArray t,JSONObject s,String l,String i){tiles=t==null?new JSONArray():t;swe=s;layer=l;id=i;invalidate();}
     public JSONArray getTiles(){return tiles;}
