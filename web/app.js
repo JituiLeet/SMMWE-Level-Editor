@@ -32,7 +32,7 @@ function syncSweUI(){
   if(!sweDoc){$("exportSwe").disabled=true;return;}
   $("sweLayer").value=sweLayer;$("sweId").value=sweId;
   const records=(sweTemplates&&sweTemplates[sweLayer])||currentArray(),ids=[];records.forEach(function(r){var id=recordId(r);if(id&&ids.indexOf(id)<0)ids.push(id);});ids.sort();
-  $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").appendChild(o);}
+  $("sweIds").replaceChildren();for(const id of ids){const o=document.createElement("option");o.value=id;$("sweIds").appendChild(o);}if(ids.length&&ids.indexOf(sweId)<0){sweId=ids[0];$("sweId").value=sweId;}
   $("exportSwe").disabled=false;
   $("sweInfo").textContent="HMAC 校验通过。S0.S2 地形："+(sweDoc.S0.S2?sweDoc.S0.S2.length:0)+" 条；当前层 "+sweLayer+"："+currentArray().length+" 条。未知字段与其他数据组保留。";
 }
