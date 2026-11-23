@@ -90,7 +90,7 @@ function setZoom(v){zoom=Math.max(.25,Math.min(3,v));$("zoom").textContent=Math.
 $("plus").onclick=()=>setZoom(zoom*1.15);$("minus").onclick=()=>setZoom(zoom/1.15);
 $("undo").onclick=()=>{const p=history.undo(state());if(p)restore(p);};$("redo").onclick=()=>{const p=history.redo(state());if(p)restore(p);};
 function download(blob,name,mime){if(window.AndroidBridge){const reader=new FileReader();reader.onload=()=>AndroidBridge.saveFile(name,reader.result.split(",")[1],mime||"application/octet-stream");reader.readAsDataURL(blob);return;}const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);}
-$("save").onclick=()=>{metadataFromUI();if(sweDoc)level.swe={imported:true,sourceName:level.swe.sourceName,document:sweDoc};validateLevel(level);download(new Blob([JSON.stringify(level,null,2)],{type:"application/json"}),(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".smmweproj","application/json");$("status").textContent="工程已保存";};
+$("save").onclick=()=>{metadataFromUI();if(sweDoc)level.swe={imported:true,sourceName:level.swe.sourceName,document:sweDoc,templates:sweTemplates};validateLevel(level);download(new Blob([JSON.stringify(level,null,2)],{type:"application/json"}),(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".smmweproj","application/json");$("status").textContent="工程已保存";};
 $("exportSwe").onclick=()=>{if(!sweDoc)return;metadataFromUI();const blob=encodeSwe(sweDoc);download(blob,(level.metadata.name||"level").replace(/[\\/:*?"<>|]/g,"_")+".swe","application/octet-stream");$("status").textContent="SWE 文件已导出";};
 $("new").onclick=()=>{if(!confirm("新建工程？未保存的修改将丢失。"))return;level=newLevel();sweDoc=null;sweTemplates=null;history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="新建工程";};
 $("open").onclick=()=>$("file").click();
@@ -103,10 +103,10 @@ $("file").onchange=async e=>{
       level.grid.width=Math.max(80,Math.min(500,Math.ceil(Math.max(0,...records.map(r=>r.xx))/16)+4));level.grid.height=Math.max(15,Math.min(100,Math.ceil(Math.max(0,...records.map(r=>r.yy))/16)+4));
       level.swe={imported:true,sourceName:f.name,document:sweDoc};sweLayer="S2";sweId="49";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="SWE 已载入，可编辑";return;
     }
-    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe?.imported?v.swe.document:null;sweTemplates=sweDoc?clone(sweDoc.S0):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
+    const v=validateLevel(JSON.parse(await f.text()));level=v;sweDoc=v.swe?.imported?v.swe.document:null;sweTemplates=sweDoc?(v.swe.templates||clone(sweDoc.S0)):null;sweLayer="S2";history.checkpoint(state());uiFromLevel();syncSweUI();draw();$("status").textContent="工程已打开";
   }catch(err){alert("打开失败："+err.message);}e.target.value="";
 };
-$("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
+$("resize").onclick=()=>{const width=Math.max(1,Math.min(500,Number($("width").value)||80)),height=Math.max(1,Math.min(100,Number($("height").value)||15)),tileSize=Math.max(8,Math.min(64,Number($("tileSize").value)||32));checkpoint();level.grid={width,height,tileSize:sweDoc?16:tileSize};if(!sweDoc)level.tiles=level.tiles.filter(t=>t.x<width&&t.y<height);draw();};
 $("sweLayer").onchange=()=>{sweLayer=$("sweLayer").value;syncSweUI();draw();};
 $("sweId").onchange=()=>{sweId=$("sweId").value;};
 ["name","author","description","tags"].forEach(id=>$(id).addEventListener("change",metadataFromUI));
