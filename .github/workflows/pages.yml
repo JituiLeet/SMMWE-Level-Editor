@@ -17,16 +17,17 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: \${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - name: Assemble Pages site
         run: |
-          mkdir -p _site/core
-          cp -R web/. _site/
+          mkdir -p _site/web _site/core
+          cp -R web/. _site/web/
           cp -R core/. _site/core/
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./web/"><title>SMMWE Level Editor</title><a href="./web/">Open SMMWE Level Editor</a>' > _site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
