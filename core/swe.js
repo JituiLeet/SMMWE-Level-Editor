@@ -40,7 +40,7 @@ export function hmacSha1(text){
 function decodeBase64(s){return binaryUtf8(atob(s));}
 function encodeBase64(s){return btoa(utf8Binary(s));}
 export function inspectSwe(buffer){
-  const raw=Array.from(new Uint8Array(buffer),b=>String.fromCharCode(b)).join("").trim();
+  const bytes=new Uint8Array(buffer);let raw="";for(let i=0;i<bytes.length;i++)raw+=String.fromCharCode(bytes[i]);raw=raw.trim();
   const m=raw.match(/^([A-Za-z0-9+/=\r\n]+)([0-9a-f]{40})$/i);
   if(!m)throw new Error("无法识别此 .swe 文件的容器格式");
   const payload=m[1].replace(/\s/g,""),actual=m[2].toLowerCase(),expected=hmacSha1(payload);
