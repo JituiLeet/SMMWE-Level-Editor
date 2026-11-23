@@ -79,7 +79,7 @@ function editSwe(x,y){
   if(!proto){$("sweInfo").textContent="当前数据组没有可复制的样本记录，无法安全新建此类对象。";return;}
   const rec=cloneSweRecord(proto),dx=xx-(Number(proto.xx)||0),dy=yy-(Number(proto.yy)||0);
   rec.xx=xx;rec.yy=yy;
-  if(sweLayer==="S8"){if(Number.isFinite(rec.dr_x))rec.dr_x+=dx;if(Number.isFinite(rec.dr_y))rec.dr_y+=dy;}
+  if(sweLayer==="S8"){if(Number.isFinite(rec.dr_x))rec.dr_x+=dx;if(Number.isFinite(rec.dr_y))rec.dr_y+=dy;}if(sweLayer==="S5"){if(Number.isFinite(rec.t_x_pos))rec.t_x_pos+=dx;if(Number.isFinite(rec.t_y_pos))rec.t_y_pos+=dy;}
   arr.push(rec);
 }
 function apply(e){
