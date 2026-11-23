@@ -47,6 +47,10 @@ jobs:
           curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/Tilemap/tilemap-backgrounds.png -o android/app/src/main/assets/art/tilemap-backgrounds.png
           curl -fL https://raw.githubusercontent.com/Tubbles/tge-assets/main/License.txt -o android/app/src/main/assets/art/LICENSE-KENNEY.txt
           file android/app/src/main/assets/art/*.png
+      - name: Check web editor and shared model
+        run: |
+          node --check web/app.js
+          node --input-type=module -e 'import { TILE_TYPES, newLevel, validateLevel } from "./core/model.js"; const ids=TILE_TYPES.map(x=>x.id); if(new Set(ids).size!==ids.length) throw new Error("Duplicate tile IDs"); validateLevel(newLevel()); console.log(`${TILE_TYPES.length} palette items; model validation passed.`);'
       - name: Run SWE codec regression tests
         run: |
           node --input-type=module --check < core/swe.js
